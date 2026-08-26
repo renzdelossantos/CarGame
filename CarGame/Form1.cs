@@ -19,6 +19,17 @@ namespace CarGame
         private int roadHeight;
         private float roadY;
 
+        //ROAD SPEED
+        private float speed = 3f;
+        private float normalSpeed = 3f;
+        private float maxSpeed = 18f;
+        private float acceleration = 0.08f;
+        private float deceleration = 0.05f;
+        private bool moveforward = false;
+        private bool isBraking = false;
+        private float brakePower = 0.15f;
+
+
         //CAR SELECTION
         private Image carSpriteSheet;
         private Image[] cars;
@@ -34,7 +45,10 @@ namespace CarGame
         private int playerWidth = 55;
         private int playerHeight = 90;
         private int playerX = 0;
-        private int playerY = 0;
+        private float playerY = 0;
+        private float normalPlayerY;
+        private float targetPlayerY;
+        private float playerForwadSpeed = 2f;
 
         // Lane System
         private int[] lanes;
@@ -125,6 +139,10 @@ namespace CarGame
 
         private void InitializePlayer()
         {
+            normalPlayerY = ClientSize.Height - playerHeight - 120;
+            playerY = normalPlayerY;
+            targetPlayerY = playerY;
+
             lanes = new int[]
             {
                90,
@@ -201,21 +219,83 @@ namespace CarGame
             }
 
             currentlane = targetlane;
+
+            //Update playerY based on acceleration and braking
+            if (moveforward)
+                targetPlayerY = normalPlayerY - 35;
+            else
+                targetPlayerY = normalPlayerY;
+            if (playerY < targetPlayerY)
+            {
+                playerY += playerForwadSpeed;
+                if (playerY > targetPlayerY)
+                    playerY = targetPlayerY;
+            }
+
+            if (playerY > targetPlayerY)
+            {
+                playerY -= playerForwadSpeed;
+                if (playerY < targetPlayerY)
+                    playerY = targetPlayerY;
+            }
         }
 
-        //--------------------------- EVENT HANDLERS ---------------------------
-        private void TimerRoad_Tick(object sender, EventArgs e)
+        private void UpdateRoad()
+
         {
-            roadY += 5;
+            roadY += speed;
 
             if (roadY >= roadHeight)
                 roadY -= roadHeight;
 
             if (roadY < 0)
                 roadY += roadHeight;
+        }
 
+        private void UpdateSpeed()
+        {
+            // Acceleration
+            if (moveforward)
+            {
+                speed += acceleration;
+                if (speed > maxSpeed)
+                    speed = maxSpeed;
+            }
+            // Brake
+            else if (isBraking)
+            {
+                speed -= brakePower;
+                if (speed < 0)
+                    speed = 0;
+            }
+
+            // Coast
+            else
+            {
+                //Gradually return to normal speed
+                if (speed > normalSpeed)
+                {
+                    speed -= deceleration;
+                    if (speed < normalSpeed)
+                        speed = normalSpeed;
+                }
+
+                //Gradually return to normal speed
+                if (speed < normalSpeed)
+                {
+                    speed += deceleration;
+                    if (speed > normalSpeed)
+                        speed = normalSpeed;
+                }
+
+            }
+        }
+        //--------------------------- EVENT HANDLERS ---------------------------
+        private void TimerRoad_Tick(object sender, EventArgs e)
+        {
+            UpdateSpeed();
+            UpdateRoad();
             UpdatePlayerPosition();
-
             Invalidate();
 
         }
@@ -225,17 +305,27 @@ namespace CarGame
             if (choosingCar)
                 return;
 
-            if (e.KeyCode == Keys.Left && targetlane > 0)
+            if ((e.KeyCode == Keys.Left || e.KeyCode == Keys.A) && targetlane > 0)
                 targetlane--;
 
-            if (e.KeyCode == Keys.Right && targetlane < lanes.Length - 1)
+            if ((e.KeyCode == Keys.Right || e.KeyCode == Keys.D) && targetlane < lanes.Length - 1)
                 targetlane++;
 
+            if (e.KeyCode == Keys.Up || e.KeyCode == Keys.W)
+                moveforward = true;
+
+            if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
+                isBraking = true;
 
         }
 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.Up || e.KeyCode == Keys.W)
+                moveforward = false;
+
+            if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
+                isBraking = false;
         }
 
         private void Form1_MouseMove(object sender, MouseEventArgs e)
@@ -262,8 +352,9 @@ namespace CarGame
         //--------------------------- DRAWING METHODS ---------------------------
         private void DrawRoad(Graphics g)
         {
-            g.DrawImage(roadImage, 0, roadY, roadWidth, roadHeight);
-            g.DrawImage(roadImage, 0, roadY - roadHeight, roadWidth, roadHeight);
+            int y = (int)roadY;
+            g.DrawImage(roadImage, 0, y, roadWidth, roadHeight);
+            g.DrawImage(roadImage, 0, y - roadHeight, roadWidth, roadHeight);
         }
 
         private void DrawCarSelection(Graphics g)
