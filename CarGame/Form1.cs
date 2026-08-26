@@ -107,16 +107,15 @@ namespace CarGame
 
         private void InitilizeGame()
         {
-            InitializeWindow();
+            InitilizeWindow();
             InitializeRoad();
             InitializeCars();
-            InitializePlayer();
+            InitilizePlayer();
             InitializeEnemy();
             RegisterEvets();
-
         }
 
-        private void InitializeWindow()
+        private void InitilizeWindow()
         {
             ClientSize = new Size(420, 540);
             DoubleBuffered = true;
@@ -182,7 +181,7 @@ namespace CarGame
 
         }
 
-        private void InitializePlayer()
+        private void InitilizePlayer()
         {
             normalPlayerY = ClientSize.Height - 120;
             playerY = normalPlayerY;
@@ -201,11 +200,9 @@ namespace CarGame
         }
 
         private void InitializeEnemy()
-
         {
             for (int i = 0; i < MAX_ENEMIES; i++)
                 enemyActive[i] = false;
-
         }
 
         private void RegisterEvets()
@@ -258,10 +255,29 @@ namespace CarGame
         private void SpawnEnemy()
         {
             SpawnInLane(rnd.Next(4), -enemyHeight);
+
+            int[] pattern;
+            int km = (int)(totalDistanceMeters / 1000);
+
+            if (km <= 1)
+                SpawnInLane(rnd.Next(4), -enemyHeight);
+            else if (km <= 3)
+            {
+                pattern = trafficPatterns[rnd.Next(8)];
+                foreach (int lane in pattern)
+                    SpawnInLane(lane, -enemyHeight);
+            }
+
+            else
+            {
+                pattern = trafficPatterns[trafficPatterns.Length];
+                foreach (int lane in pattern)
+                    SpawnInLane(lane, -enemyHeight);
+            }
+
         }
 
         private void SpawnInLane(int lane, float y)
-
         {
             if (!CanSpawnInLane(lane))
                 return;
@@ -321,6 +337,7 @@ namespace CarGame
 
                 if (playerRect.IntersectsWith(enemyRect))
                 {
+                    gameOver = true;
                     Collide = true;
                     Invalidate();
                     return;
@@ -334,6 +351,7 @@ namespace CarGame
 
             }
         }
+
         private void RestartGame()
         {
             gameOver = false;
@@ -350,7 +368,6 @@ namespace CarGame
 
             timerRoad.Start();
         }
-
 
         //----------------------------- UPDATE METHODS -------------------------
         private void UpdatePlayerPosition()
@@ -484,10 +501,9 @@ namespace CarGame
             UpdateSpeed();
             UpdateRoad();
             UpdatePlayerPosition();
-            CheckCollision();
             updateEnemySpeed();
+            CheckCollision();
             Invalidate();
-
         }
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
@@ -550,8 +566,7 @@ namespace CarGame
             if (gameOver)
                 DrawGameOver(e.Graphics);
 
-
-            DrawDebugInfo(e.Graphics);
+            //DrawDebugInfo(e.Graphics);
         }
 
 
@@ -638,6 +653,7 @@ namespace CarGame
                     g.DrawRectangle(Pens.Red, enemyRect);
                 }
             }
+
             // PlayerHitbox
             Rectangle playerRect = new Rectangle(
                 playerX + 8,
@@ -657,9 +673,9 @@ namespace CarGame
             {
                 string debugtext = $"Speed: {speed:f2}\n" +
                                    $"Distance: {totalDistanceMeters:f2} m\n" +
+                                   $"Collided: {Collide}\n" +
                                    $"Player Lane: {currentLane}\n" +
                                    $"Target Lane: {targetLane}\n" +
-                                   $"Collided: {Collide}\n" +
                                    $"Enemy Active: {activeEnenmies}";
                 g.DrawString(debugtext, font, Brushes.Yellow, 0, ClientSize.Height - 100);
             }
@@ -788,5 +804,8 @@ namespace CarGame
 
             path.Dispose();
         }
+
+
+
     }
 }
