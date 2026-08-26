@@ -50,6 +50,10 @@ namespace CarGame
         private float targetPlayerY;
         private float playerForwadSpeed = 2f;
 
+        // Distance 
+        private float totalDistanceMeters = 0f;
+        private float pixelperMeter = 12f
+
         // Lane System
         private int[] lanes;
         private int currentlane;
@@ -244,6 +248,8 @@ namespace CarGame
 
         {
             roadY += speed;
+            if (!choosingCar)
+                totalDistanceMeters += speed / pixelperMeter;
 
             if (roadY >= roadHeight)
                 roadY -= roadHeight;
@@ -391,6 +397,24 @@ namespace CarGame
                     g.FillEllipse(brush, playerX + 10, playerY + playerHeight - 10, 8, 8);
                     g.FillEllipse(brush, playerX + playerWidth - 18, playerY + playerHeight - 10, 8, 8);
                 }
+            }
+        }
+        private void DrawDebugInfo(Graphics g)
+        {
+            //Draw debug info Overlay
+            using (Brush overlay = new SolidBrush(Color.FromArgb(160, 0, 0, 0)))
+                g.FillRectangle(overlay, new Rectangle(5, ClientSize.Height - 105, 150, 100));
+
+            // Draw debug info
+            using (Font font = new Font("Arial", 12, FontStyle.Bold))
+            {
+                if (choosingCar) totalDistanceMeters = 0;
+
+                string debugInfo = $"Speed: {speed:F2}\n" +
+                                   $"Distance: {totalDistanceMeters:F2} m\n" +
+                                   $"Player Lane: {currentlane}\n" +
+                                   $"Target Lane: {targetlane}\n";
+                g.DrawString(debugInfo, font, Brushes.White, 10, ClientSize.Height - 100);
             }
         }
 
